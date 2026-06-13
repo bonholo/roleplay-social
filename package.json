@@ -1,0 +1,36 @@
+{
+  "name": "roleplay-social",
+  "version": "0.1.0",
+  "description": "Social app para conectar pessoas em roles e atividades em comum",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo start",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "db:generate": "prisma generate --schema=packages/api/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=packages/api/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=packages/api/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "turbo": "^1.13.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "author": "bonholo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bonholo/roleplay-social.git"
+  }
+}
