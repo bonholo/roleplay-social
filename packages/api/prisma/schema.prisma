@@ -1,0 +1,216 @@
+// Prisma Schema - RolePlay Social MVP
+// Banco de dados: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER - Perfil do usuário
+// ============================================================
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String?
+  avatar      String?
+  bio         String?
+  age         Int?
+  gender      Gender   @default(OTHER)
+  status      UserStatus @default(OFFLINE)
+  isVerified  Boolean  @default(false)
+  isPro       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  rolesCreated    Role[]       @relation("RoleCreator")
+  roleParticipants RoleParticipant[]
+  sentInvites     Invite[]     @relation("InviteSender")
+  receivedInvites Invite[]     @relation("InviteReceiver")
+  matches         Match[]      @relation("MatchUser1")
+  matchedWith     Match[]      @relation("MatchUser2")
+  messages        Message[]
+  blockedUsers    Block[]      @relation("BlockedBy")
+  blockedByUsers  Block[]      @relation("BlockedUser")
+
+  @@map("users")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  GAY
+  LESBIAN
+  TRANS
+  NON_BINARY
+  OTHER
+}
+
+enum UserStatus {
+  ONLINE
+  AVAILABLE
+  OFFLINE
+}
+
+// ============================================================
+// ROLE - Programa/Atividade
+// ============================================================
+model Role {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  category    RoleCategory
+  location    String
+  city        String
+  scheduledAt DateTime?
+  maxPeople   Int?
+  isPrivate   Boolean    @default(false)
+  inviteLink  String?    @unique
+  status      RoleStatus @default(OPEN)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relacionamentos
+  creator   User   @relation("RoleCreator", fields: [creatorId], references: [id])
+  creatorId String
+  participants RoleParticipant[]
+  room      Room?
+
+  @@map("roles")
+}
+
+enum RoleCategory {
+  BAR
+  RUNNING
+  EXPLORE_CITY
+  RESTAURANT
+  PARTY
+  COFFEE
+  GAMES
+  CINEMA
+  PARK
+  OTHER
+}
+
+enum RoleStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+  FINISHED
+}
+
+// ============================================================
+// ROLE PARTICIPANT - Participantes de um role
+// ============================================================
+model RoleParticipant {
+  id        String            @id @default(cuid())
+  status    ParticipantStatus @default(PENDING)
+  joinedAt  DateTime          @default(now())
+
+  role      Role   @relation(fields: [roleId], references: [id])
+  roleId    String
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@unique([roleId, userId])
+  @@map("role_participants")
+}
+
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  LEFT
+}
+
+// ============================================================
+// ROOM - Sala de chat de um Role
+// ============================================================
+model Room {
+  id        String    @id @default(cuid())
+  name      String?
+  createdAt DateTime  @default(now())
+
+  role      Role      @relation(fields: [roleId], references: [id])
+  roleId    String    @unique
+  messages  Message[]
+
+  @@map("rooms")
+}
+
+// ============================================================
+// MESSAGE - Mensagem no chat
+// ============================================================
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  room      Room   @relation(fields: [roomId], references: [id])
+  roomId    String
+  author    User   @relation(fields: [authorId], references: [id])
+  authorId  String
+
+  @@map("messages")
+}
+
+// ============================================================
+// INVITE - Convite para sair (sistema de match)
+// ============================================================
+model Invite {
+  id        String       @id @default(cuid())
+  message   String?
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  sender    User   @relation("InviteSender", fields: [senderId], references: [id])
+  senderId  String
+  receiver  User   @relation("InviteReceiver", fields: [receiverId], references: [id])
+  receiverId String
+
+  @@map("invites")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// ============================================================
+// MATCH - Match entre dois usuários
+// ============================================================
+model Match {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  user1     User   @relation("MatchUser1", fields: [user1Id], references: [id])
+  user1Id   String
+  user2     User   @relation("MatchUser2", fields: [user2Id], references: [id])
+  user2Id   String
+
+  @@unique([user1Id, user2Id])
+  @@map("matches")
+}
+
+// ============================================================
+// BLOCK - Bloqueio entre usuários
+// ============================================================
+model Block {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  blocker   User   @relation("BlockedBy", fields: [blockerId], references: [id])
+  blockerId String
+  blocked   User   @relation("BlockedUser", fields: [blockedId], references: [id])
+  blockedId String
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
